@@ -1,19 +1,25 @@
-from network import LoRa
 import socket
 import time
 
 class LoRaServer:
-    def __init__(self, frequency, spreading_factor, bandwidth, coding_rate):
-        self.lora = LoRa(mode=LoRa.LORA, frequency=frequency, sf=spreading_factor, bandwidth=bandwidth, coding_rate=coding_rate)
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.bind(('', 1236))  # Port pour recevoir les données LoRa
+    def __init__(self):
+        # Adresse IP du serveur LoRa
+        self.addr = '10.89.2.198'  # Adresse IP du FiPy
+        self.port = 1236  # Port d'écoute LoRa
 
     def run(self):
-        print('Serveur LoRa en attente des données...')
-        while True:
-            data, addr = self.sock.recvfrom(1024)
-            if data:
-                message = data.decode('utf-8').strip()
-                print('Données LoRa reçues: {message}')
-                return message
-            time.sleep(1)
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind((self.addr, self.port))
+        s.listen(1)
+        print(f"Serveur LoRa en écoute sur {self.addr}:{self.port}")
+
+        conn, _ = s.accept()
+        print("Connexion LoRa acceptée")
+        data = conn.recv(1024).decode()
+
+        if data.startswith("Temperature:"):
+            temperature = data.split(":")[1].strip()
+            print(f"Température LoRa reçue: {temperature}")
+            return temperature
+
+        conn.close()
