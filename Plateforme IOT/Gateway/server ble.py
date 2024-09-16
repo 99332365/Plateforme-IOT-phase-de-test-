@@ -1,26 +1,25 @@
-from network import Bluetooth
+import socket
 import time
 
 class BLEServer:
     def __init__(self):
-        self.ble = Bluetooth()
-        self.ble.set_advertisement(name='FiPy_BLE', manufacturer_data='123456')
-        self.ble.callback(trigger=Bluetooth.CLIENT_CONNECTED | Bluetooth.CLIENT_DISCONNECTED, handler=self.conn_cb)
-        self.conn_handle = None
+        # Adresse IP du serveur BLE
+        self.addr = '10.89.2.197'  # Adresse IP du FiPy
+        self.port = 1235  # Port d'écoute BLE
 
-    def conn_cb(self, bt_o, event):
-        if event == Bluetooth.CLIENT_CONNECTED:
-            print('Client BLE connecté')
-        elif event == Bluetooth.CLIENT_DISCONNECTED:
-            print('Client BLE déconnecté')
+    def run(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind((self.addr, self.port))
+        s.listen(1)
+        print(f"Serveur BLE en écoute sur {self.addr}:{self.port}")
 
-    def receive_data(self):
-        self.ble.advertise(True)
-        while True:
-            if self.ble.irq():
-                conn = self.ble.irq().recv(512)
-                if conn:
-                    data = conn.decode('utf-8').strip()
-                    print('Données BLE reçues: {data}')
-                    return data
-            time.sleep(1)
+        conn, _ = s.accept()
+        print("Connexion BLE acceptée")
+        data = conn.recv(1024).decode()
+
+        if data.startswith("Temperature:"):
+            temperature = data.split(":")[1].strip()
+            print(f"Température BLE reçue: {temperature}")
+            return temperature
+
+        conn.close()
