@@ -1,33 +1,26 @@
 import socket
-from network import WLAN
 import time
 
 class WiFiServer:
     def __init__(self):
-        self.wlan = WLAN(mode=WLAN.STA)
+        # Configuration réseau Wi-Fi et serveur
+        self.addr = '10.89.2.196'  # Adresse IP du FiPy
+        self.port = 1234  # Port d'écoute
 
     def run(self):
-        addr = self.wlan.ifconfig()[0]
-        port = 1234
-
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.bind((addr, port))
+        s.bind((self.addr, self.port))
         s.listen(1)
+        print(f"Serveur Wi-Fi en écoute sur {self.addr}:{self.port}")
 
-        print('Serveur Wi-Fi en écoute sur {addr}:{port}')
+        conn, _ = s.accept()
+        print("Connexion Wi-Fi acceptée")
+        data = conn.recv(1024).decode()
 
-        while True:
-            conn, _ = s.accept()
-            print('Connexion Wi-Fi acceptée')
-            try:
-                while True:
-                    data = conn.recv(1024).decode()
-                    if not data:
-                        break
-                    print('Données Wi-Fi reçues: {data.strip()}')
-                    return data
-            except OSError as e:
-                print('Erreur de connexion Wi-Fi: {e}')
-            finally:
-                conn.close()
-                print('Connexion Wi-Fi fermée')
+        if data.startswith("Temperature:"):
+            temperature = data.split(":")[1].strip()
+            print(f"Température Wi-Fi reçue: {temperature}")
+            return temperature
+
+        conn.close()
+
